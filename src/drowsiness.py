@@ -113,6 +113,22 @@ while True:
                 (0, 0, 255),
                 2
             )
+            if closed_frames >= DROWSY_FRAMES:
+                status = "DROWSY"
+                color = (0, 0, 255)
+            else:
+                status = "AWAKE"
+                color = (0, 255, 0)
+
+            cv2.putText(
+                frame,
+                f"Status: {status}",
+                (20, 90),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.7,
+                color,
+                2
+            )
 
         for face_landmarks in results.multi_face_landmarks:
 
@@ -137,7 +153,7 @@ while True:
                     )
 
     cv2.imshow(
-        "SentinelAI Face Mesh",
+        "SentinelAI Drowsiness Detection",
         frame
     )
 
