@@ -5,6 +5,7 @@ from config import *
 
 closed_frames = 0
 yawn_frames = 0
+fatigue_score = 0
 
 def euclidean_distance(point1, point2):
 
@@ -104,15 +105,21 @@ while True:
 
         ear = calculate_ear(face_landmarks)
         mar = calculate_mar(face_landmarks)
+        fatigue_score = 0
+
 
         if ear < EAR_THRESHOLD:
             closed_frames += 1
         else:
             closed_frames = 0
+        if closed_frames >= DROWSY_FRAMES:
+            fatigue_score += 70
         if mar > MAR_THRESHOLD:
             yawn_frames += 1
         else:
             yawn_frames = 0
+        if yawn_frames >= YAWN_FRAMES:
+            fatigue_score += 30
 
         cv2.putText(
             frame,
@@ -151,6 +158,15 @@ while True:
             (255, 0, 255),
             2
         )
+        cv2.putText(
+            frame,
+            f"Fatigue Score: {fatigue_score}",
+            (20, 180),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.7,
+            (0, 165, 255),
+            2
+        )
         if yawn_frames >= YAWN_FRAMES:
 
             cv2.putText(
@@ -163,20 +179,15 @@ while True:
                 2
             )
         
-        if closed_frames >= DROWSY_FRAMES:
-
-            cv2.putText(
-                frame,
-                "DROWSINESS ALERT",
-                (50, 210),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                1,
-                (0, 0, 255),
-                2
-            )
+        if fatigue_score >= 80:
 
             status = "DROWSY"
             color = (0, 0, 255)
+
+        elif fatigue_score >= 30:
+
+            status = "FATIGUED"
+            color = (0, 255, 255)
 
         else:
 
@@ -192,6 +203,17 @@ while True:
             color,
             2
         )
+        if fatigue_score >= 80:
+
+            cv2.putText(
+                frame,
+                "DROWSINESS ALERT",
+                (50, 210),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                1,
+                (0, 0, 255),
+                2
+            )
 
         for face_landmarks in results.multi_face_landmarks:
 
