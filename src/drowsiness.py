@@ -1,5 +1,42 @@
 import cv2
 import mediapipe as mp
+import math
+from config import *
+
+closed_frames = 0
+
+def euclidean_distance(point1, point2):
+
+    x1, y1 = point1
+    x2, y2 = point2
+
+    distance = math.sqrt(
+        (x2 - x1) ** 2 +
+        (y2 - y1) ** 2
+    )
+
+    return distance
+def calculate_ear(face_landmarks):
+
+    left_corner = face_landmarks.landmark[33]
+    right_corner = face_landmarks.landmark[133]
+
+    upper_lid = face_landmarks.landmark[159]
+    lower_lid = face_landmarks.landmark[145]
+
+    eye_width = euclidean_distance(
+        (left_corner.x, left_corner.y),
+        (right_corner.x, right_corner.y)
+    )
+
+    eye_height = euclidean_distance(
+        (upper_lid.x, upper_lid.y),
+        (lower_lid.x, lower_lid.y)
+    )
+
+    ear = eye_height / eye_width
+
+    return ear
 
 # MediaPipe Face Mesh
 mp_face_mesh = mp.solutions.face_mesh
@@ -37,6 +74,25 @@ while True:
     results = face_mesh.process(rgb_frame)
 
     if results.multi_face_landmarks:
+        face_landmarks = results.multi_face_landmarks[0]
+
+        ear = calculate_ear(face_landmarks)
+
+        if ear < EAR_THRESHOLD:
+            closed_frames += 1
+        else:
+            closed_frames = 0
+        
+        if closed_frames >= DROWSY_FRAMES:
+            cv2.putText(
+                frame,
+                "DROWSINESS ALERT",
+                (50, 50),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                1,
+                (0, 0, 255),
+                2
+            )
 
         for face_landmarks in results.multi_face_landmarks:
 
