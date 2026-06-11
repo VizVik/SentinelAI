@@ -4,6 +4,7 @@ import math
 from config import *
 
 closed_frames = 0
+yawn_frames = 0
 
 def euclidean_distance(point1, point2):
 
@@ -33,10 +34,35 @@ def calculate_ear(face_landmarks):
         (upper_lid.x, upper_lid.y),
         (lower_lid.x, lower_lid.y)
     )
+    if eye_width == 0:
+        return 0
 
     ear = eye_height / eye_width
 
     return ear
+def calculate_mar(face_landmarks):
+
+    upper_lip = face_landmarks.landmark[13]
+    lower_lip = face_landmarks.landmark[14]
+
+    left_corner = face_landmarks.landmark[78]
+    right_corner = face_landmarks.landmark[308]
+
+    mouth_height = euclidean_distance(
+        (upper_lip.x, upper_lip.y),
+        (lower_lip.x, lower_lip.y)
+    )
+
+    mouth_width = euclidean_distance(
+        (left_corner.x, left_corner.y),
+        (right_corner.x, right_corner.y)
+    )
+    if mouth_width == 0:
+        return 0
+
+    mar = mouth_height / mouth_width
+
+    return mar
 
 # MediaPipe Face Mesh
 mp_face_mesh = mp.solutions.face_mesh
@@ -77,11 +103,16 @@ while True:
         face_landmarks = results.multi_face_landmarks[0]
 
         ear = calculate_ear(face_landmarks)
+        mar = calculate_mar(face_landmarks)
 
         if ear < EAR_THRESHOLD:
             closed_frames += 1
         else:
             closed_frames = 0
+        if mar > MAR_THRESHOLD:
+            yawn_frames += 1
+        else:
+            yawn_frames = 0
 
         cv2.putText(
             frame,
@@ -102,33 +133,65 @@ while True:
             (255, 255, 0),
             2
         )
+        cv2.putText(
+            frame,
+            f"MAR: {mar:.3f}",
+            (20, 90),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.7,
+            (255, 0, 255),
+            2
+        )
+        cv2.putText(
+            frame,
+            f"Yawn Frames: {yawn_frames}",
+            (20, 120),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.7,
+            (255, 0, 255),
+            2
+        )
+        if yawn_frames >= YAWN_FRAMES:
+
+            cv2.putText(
+                frame,
+                "YAWNING",
+                (50, 240),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                1,
+                (0, 255, 255),
+                2
+            )
         
         if closed_frames >= DROWSY_FRAMES:
+
             cv2.putText(
                 frame,
                 "DROWSINESS ALERT",
-                (50, 50),
+                (50, 210),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 1,
                 (0, 0, 255),
                 2
             )
-            if closed_frames >= DROWSY_FRAMES:
-                status = "DROWSY"
-                color = (0, 0, 255)
-            else:
-                status = "AWAKE"
-                color = (0, 255, 0)
 
-            cv2.putText(
-                frame,
-                f"Status: {status}",
-                (20, 90),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.7,
-                color,
-                2
-            )
+            status = "DROWSY"
+            color = (0, 0, 255)
+
+        else:
+
+            status = "AWAKE"
+            color = (0, 255, 0)
+
+        cv2.putText(
+            frame,
+            f"Status: {status}",
+            (20, 150),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.7,
+            color,
+            2
+        )
 
         for face_landmarks in results.multi_face_landmarks:
 
