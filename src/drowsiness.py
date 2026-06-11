@@ -82,6 +82,26 @@ while True:
             closed_frames += 1
         else:
             closed_frames = 0
+
+        cv2.putText(
+            frame,
+            f"EAR: {ear:.3f}",
+            (20, 30),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.7,
+            (0, 255, 0),
+            2
+        )
+
+        cv2.putText(
+            frame,
+            f"Frames: {closed_frames}",
+            (20, 60),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.7,
+            (255, 255, 0),
+            2
+        )
         
         if closed_frames >= DROWSY_FRAMES:
             cv2.putText(
